@@ -165,6 +165,84 @@ app.post('/wallet/balance', async (req, res) => {
 	}
 });
 
+// Pool recommendation endpoints
+import { PoolService, PoolPreferences } from './services/poolService';
+
+// Get pool recommendations based on preferences
+app.post('/pool/recommendations', async (req, res) => {
+	try {
+		const { preferences, query } = req.body;
+
+		let parsedPreferences: PoolPreferences;
+
+		if (query && typeof query === 'string') {
+			// Parse preferences from natural language query
+			parsedPreferences = PoolService.parsePreferences(query);
+		} else if (preferences) {
+			// Use provided preferences object
+			parsedPreferences = preferences;
+		} else {
+			// Default preferences
+			parsedPreferences = {
+				riskTolerance: 'medium',
+				liquidityPreference: 'medium',
+				stakingRequired: false
+			};
+		}
+
+		console.log('🏊‍♂️ Getting pool recommendations with preferences:', parsedPreferences);
+
+		const recommendations = await PoolService.getPoolRecommendations(parsedPreferences);
+		const recommendationText = await PoolService.generateRecommendationText(parsedPreferences);
+
+		return res.json({
+			success: true,
+			preferences: parsedPreferences,
+			recommendations,
+			recommendationText,
+			timestamp: new Date().toISOString()
+		});
+
+	} catch (error) {
+		console.error('Pool Recommendations Endpoint Error:', error);
+		return res.status(500).json({
+			error: 'Failed to get pool recommendations',
+			details: error instanceof Error ? error.message : 'Unknown error'
+		});
+	}
+});
+
+// Get specific pool details
+app.get('/pool/:poolId', async (req, res) => {
+	try {
+		const { poolId } = req.params;
+
+		console.log(`🔍 Getting details for pool: ${poolId}`);
+
+		const poolDetails = await PoolService.getPoolDetails(poolId);
+
+		if (!poolDetails) {
+			return res.status(404).json({
+				error: 'Pool not found',
+				poolId
+			});
+		}
+
+		return res.json({
+			success: true,
+			pool: poolDetails,
+			timestamp: new Date().toISOString()
+		});
+
+	} catch (error) {
+		console.error('Pool Details Endpoint Error:', error);
+		return res.status(500).json({
+			error: 'Failed to get pool details',
+			details: error instanceof Error ? error.message : 'Unknown error'
+		});
+	}
+});
+
 // Root route
 app.get('/', (req, res) => {
 	res.json({
@@ -175,7 +253,9 @@ app.get('/', (req, res) => {
 			health: '/health',
 			ai: '/ai/ask',
 			auth: '/auth/*',
-			transactions: '/tx/*'
+			transactions: '/tx/*',
+			balance: '/wallet/balance',
+			pools: '/pool/*'
 		}
 	});
 });

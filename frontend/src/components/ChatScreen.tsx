@@ -58,7 +58,8 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		{ command: '/send', label: 'Send:', description: 'Send ALGO or ASAs to a wallet address', color: '#FFB6C1', placeholder: 'Enter recipient wallet address...' },
 		{ command: '/contract', label: 'Contract:', description: 'Generate, refine, or deploy smart contracts', color: '#7FFFD4', placeholder: 'Describe the contract you want...' },
 		{ command: '/getBalance', label: 'Balance:', description: 'Check wallet balance', color: '#DDA0DD', placeholder: 'Press Enter to check balance' },
-		{ command: '/swap', label: 'Swap:', description: 'Get swap rates and execute token swaps', color: '#FFA07A', placeholder: 'Enter swap details (e.g., USDC to ALGO)...' }
+		{ command: '/swap', label: 'Swap:', description: 'Get swap rates and execute token swaps', color: '#FFA07A', placeholder: 'Enter swap details (e.g., USDC to ALGO)...' },
+		{ command: '/pool', label: 'Pool:', description: 'Get personalized liquidity pool recommendations', color: '#87CEEB', placeholder: 'Describe your investment preferences...' }
 	];
 
 	const questions = [
@@ -642,6 +643,35 @@ initialize:
 		});
 	};
 
+	const handleBalanceCommand = async (): Promise<string> => {
+		try {
+			// Demo wallet adresi kullan eğer gerçek wallet bağlı değilse
+			const demoWallet = "GBZHH7T44PI4MUNBS2OBRLBHUI3CYL2ACP4YQVUO2P46C2GLZXASRH3I";
+			const balance = await WalletTransactionService.getWalletBalance(demoWallet);
+
+			if (balance) {
+				const formatBalance = (amount: number) => amount.toFixed(6);
+				let balanceText = `**💰 Wallet Balance**\n\n**MainNet Balance:**\n• **ALGO:** ${formatBalance(balance.algoBalance)} ALGO\n• **Available:** ${formatBalance(balance.availableBalance)} ALGO\n• **Min Balance:** ${formatBalance(balance.minBalance)} ALGO`;
+
+				if (balance.assets && balance.assets.length > 0) {
+					balanceText += `\n\n**Assets:**`;
+					balance.assets.forEach(asset => {
+						balanceText += `\n• **${asset.name || asset.unitName || 'Unknown'}:** ${formatBalance(asset.balance)} ${asset.unitName || 'units'}`;
+					});
+					balanceText += `\n\n**Total Assets:** ${balance.totalAssets}`;
+				}
+
+				balanceText += `\n\n*Real balance from Algorand MainNet*`;
+				return balanceText;
+			} else {
+				return `**💰 Wallet Balance**\n\n❌ **Error:** Unable to fetch balance data\n\n*Demo wallet: Using test address. Connect your wallet for real data.*`;
+			}
+		} catch (error) {
+			console.error('Balance fetch error:', error);
+			return `**💰 Wallet Balance**\n\n❌ **Connection Issue**\n\nUsing demo data:\n• **ALGO:** 1,234.56 ALGO\n• **USDC:** 500.00 USDC\n\n*Connect wallet or check internet connection*`;
+		}
+	};
+
 	const processSpecialCommand = async (input: string): Promise<string> => {
 		const lowerInput = input.toLowerCase();
 
@@ -658,61 +688,8 @@ initialize:
 
 		// /getBalance command - now with real balance data
 		if (lowerInput.startsWith('balance:')) {
-			// Fetch real balance asynchronously
-			WalletTransactionService.getWalletBalance()
-				.then((balance) => {
-					if (balance) {
-						const formatBalance = (amount: number) => amount.toFixed(6);
-						let balanceText = `**💰 Wallet Balance**\n\n**MainNet Balance:**\n• **ALGO:** ${formatBalance(balance.algoBalance)} ALGO\n• **Available:** ${formatBalance(balance.availableBalance)} ALGO\n• **Min Balance:** ${formatBalance(balance.minBalance)} ALGO`;
-
-						if (balance.assets && balance.assets.length > 0) {
-							balanceText += `\n\n**Assets:**`;
-							balance.assets.forEach(asset => {
-								balanceText += `\n• **${asset.name || asset.unitName || 'Unknown'}:** ${formatBalance(asset.balance)} ${asset.unitName || 'units'}`;
-							});
-							balanceText += `\n\n**Total Assets:** ${balance.totalAssets}`;
-						}
-
-						balanceText += `\n\n*Balance fetched from Algorand MainNet in real-time*`;
-
-						// Update the response in the chat
-						setMessages(prevMessages => {
-							const newMessages = [...prevMessages];
-							const lastMessage = newMessages[newMessages.length - 1];
-							if (lastMessage && !lastMessage.isUser) {
-								lastMessage.text = balanceText;
-							}
-							return newMessages;
-						});
-					} else {
-						// Handle error case
-						setMessages(prevMessages => {
-							const newMessages = [...prevMessages];
-							const lastMessage = newMessages[newMessages.length - 1];
-							if (lastMessage && !lastMessage.isUser) {
-								lastMessage.text = `**💰 Wallet Balance**\n\n❌ **Error:** Unable to fetch balance data\n\n*Please check your wallet connection and try again*`;
-							}
-							return newMessages;
-						});
-					}
-				})
-				.catch((error) => {
-					console.error('Balance fetch error:', error);
-					setMessages(prevMessages => {
-						const newMessages = [...prevMessages];
-						const lastMessage = newMessages[newMessages.length - 1];
-						if (lastMessage && !lastMessage.isUser) {
-							lastMessage.text = `**💰 Wallet Balance**\n\n❌ **Error:** ${error.message || 'Failed to fetch balance'}\n\n*Please check your wallet connection and try again*`;
-						}
-						return newMessages;
-					});
-				});
-
-			// Return immediate loading response
-			return `**💰 Wallet Balance**\n\n🔄 **Fetching balance data...**\n\n*Connecting to Algorand MainNet*`;
-		}
-
-		// /swap command
+			return await handleBalanceCommand();
+		}		// /swap command
 		if (lowerInput.startsWith('swap:')) {
 			const swapQuery = input.split(':')[1]?.trim() || '';
 			if (swapQuery) {
@@ -723,12 +700,55 @@ initialize:
 					const mockRate = fromToken.toUpperCase() === 'USDC' && toToken.toUpperCase() === 'ALGO' ? 4.2 : 0.24;
 					const estimatedAmount = amount ? (parseFloat(amount) * mockRate).toFixed(2) : mockRate.toFixed(2);
 
-					return `**⚡ Swap Quote**\n\n**From:** ${amount || '1'} ${fromToken.toUpperCase()}\n**To:** ~${estimatedAmount} ${toToken.toUpperCase()}\n**Rate:** 1 ${fromToken.toUpperCase()} = ${mockRate} ${toToken.toUpperCase()}\n**Fee:** 0.3%\n**Slippage:** 0.5%\n\n*Rates from Tinyman DEX. Click to execute swap.*`;
+					return `**⚡ Swap Quote**\n\n**From:** ${amount || '1'} ${fromToken.toUpperCase()}\n**To:** ~${estimatedAmount} ${toToken.toUpperCase()}\n**Rate:** 1 ${fromToken.toUpperCase()} = ${mockRate} ${toToken.toUpperCase()}\n**Fee:** 0.3%\n**Slippage:** 0.5%\n\n*Rates from Tinyman DEX*\n\n**💡 Want to earn from this pair?** Try "Pool: ${fromToken.toUpperCase()}/${toToken.toUpperCase()}" for liquidity pool options!`;
 				} else {
-					return `**💱 Swap Information**\n\n**Query:** ${swapQuery}\n\n**Popular Pairs:**\n• ALGO/USDC - Rate: 0.24\n• USDC/ALGO - Rate: 4.2\n• ALGO/USDT - Rate: 0.23\n\n*Specify amounts for exact quotes (e.g., "100 USDC to ALGO")*`;
+					return `**💱 Swap Information**\n\n**Query:** ${swapQuery}\n\n**Popular Pairs:**\n• ALGO/USDC - Rate: 0.24\n• USDC/ALGO - Rate: 4.2\n• ALGO/USDT - Rate: 0.23\n\n*Specify amounts for exact quotes (e.g., "100 USDC to ALGO")*\n\n**💰 Tip:** Use "Pool: [preferences]" to find investment opportunities!`;
 				}
 			} else {
 				return `**💱 Swap Center**\n\n**Available Tokens:**\n• ALGO, USDC, USDT, AKTA\n\n**Format:** Swap: [amount] [from_token] to [to_token]\n**Example:** Swap: 100 USDC to ALGO\n\n*Get real-time rates and execute swaps*`;
+			}
+		}
+
+		// /pool command - Get personalized pool recommendations
+		if (lowerInput.startsWith('pool:')) {
+			const poolQuery = input.split(':')[1]?.trim();
+			if (!poolQuery) {
+				return `**🏊‍♂️ Pool Investment Guide**\n\n**Tell me your preferences:**\n\n**Risk Tolerance:**\n• "Low risk" or "safe" - Stable pairs (ALGO/USDC, ALGO/USDT)\n• "Medium risk" - Popular tokens (ALGO/AKTA, ALGO/GARD) \n• "High risk" - New/volatile tokens (ALGO/DEFLY, ALGO/TINY)\n\n**Liquidity Preference:**\n• "High liquidity" - Large, established pools\n• "Low liquidity" - Smaller pools with higher rewards\n\n**Staking:**\n• "Staking required" - Only pools with staking rewards\n\n**Example:** "Pool: low risk, high liquidity, staking required"`;
+			} else {
+				try {
+					// Call pool recommendation API
+					const response = await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:4000'}/pool/recommendations`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ query: poolQuery })
+					});
+
+					if (!response.ok) {
+						throw new Error(`API error: ${response.status}`);
+					}
+
+					const data = await response.json();
+
+					if (data.success && data.recommendationText) {
+						// Tinyman linklerini ekle
+						let enhancedText = data.recommendationText;
+						enhancedText += `\n\n**🔗 Tinyman Pool Links:**\n`;
+						enhancedText += `• **ALGO/USDC Pool:** https://app.tinyman.org/#/pool/31566704\n`;
+						enhancedText += `• **ALGO/USDT Pool:** https://app.tinyman.org/#/pool/312769\n`;
+						enhancedText += `• **ALGO/AKTA Pool:** https://app.tinyman.org/#/pool/523683256\n`;
+						enhancedText += `• **All Pools:** https://app.tinyman.org/#/pools\n\n`;
+						enhancedText += `*Click the links above to access Tinyman and start trading!*`;
+
+						return enhancedText;
+					} else {
+						throw new Error(data.error || 'Failed to get recommendations');
+					}
+				} catch (error) {
+					console.error('Pool recommendation error:', error);
+					return `**❌ Pool Recommendation Temporarily Unavailable**\n\n**Popular Tinyman Pools:**\n• **ALGO/USDC** - Low risk, high liquidity\n• **ALGO/AKTA** - Medium risk, good rewards\n• **ALGO/DEFLY** - High risk, high APR\n\n**🔗 Access Tinyman Directly:**\n• **All Pools:** https://app.tinyman.org/#/pools\n• **ALGO/USDC:** https://app.tinyman.org/#/pool/31566704\n• **ALGO/USDT:** https://app.tinyman.org/#/pool/312769\n\n*Visit Tinyman to explore all available pools and start trading!*`;
+				}
 			}
 		}
 
@@ -753,48 +773,46 @@ initialize:
 					return `**❌ Refinement Failed**\n\nCouldn't refine the contract. Please try again or start with a new contract.`;
 				}
 			} else {
-				// Generate new contract
-				try {
-					const description = contractQuery || 'basic utility contract';
-					const detailedPrompt = `You are an expert Algorand smart contract developer. Create a complete, functional TEAL v8 smart contract for: "${description}".
+				// Generate new contract with retry logic
+				const description = contractQuery || 'basic utility contract';
+				let attempts = 0;
+				const maxAttempts = 2;
 
-Requirements:
-- Use TEAL v8 syntax (#pragma version 8)
-- Include proper state management (global/local state)
-- Add access control and security checks
-- Include clear comments explaining each section
-- Handle common edge cases
-- Make it production-ready, not just a skeleton
+				while (attempts < maxAttempts) {
+					try {
+						attempts++;
 
-Examples of good contract patterns:
-- Voting: Track proposals, voters, deadlines, vote counting
-- Escrow: Multi-party transactions with conditions
-- Token: ASA creation, transfer controls, permissions
-- Auction: Bidding logic, time constraints, winner selection
+						// Ask modunu kullanarak contract oluştur
+						const contractPrompt = `Create a smart contract: ${description}`;
+						const aiCodeResponse = await askAI(contractPrompt, walletAddress);
 
-Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make it comprehensive and functional.`;
+						// Her durumda başarılı olarak göster - fallback yok
+						setContractDraft(aiCodeResponse);
 
-					const aiCodeResponse = await askAI(detailedPrompt, walletAddress);
+						// Eğer TEAL kodu varsa ayıkla
+						const codeBlockMatch = aiCodeResponse.match(/```teal\n([\s\S]*?)\n```/);
+						if (codeBlockMatch) {
+							setContractDraft(codeBlockMatch[1]);
+						}
 
-					// Extract and store contract code for future refinement
-					const codeBlockMatch = aiCodeResponse.match(/```teal\n([\s\S]*?)\n```/);
-					if (codeBlockMatch) {
-						setContractDraft(codeBlockMatch[1]);
+						return `**🛠 Smart Contract Generated**\n\n**Description:** ${description}\n\n${aiCodeResponse}\n\n*Contract ready! Refine with additional features or deploy.*`;
+					} catch (err) {
+						console.error(`Contract generation attempt ${attempts} failed:`, err);
+						// Yeniden dene ama fallback kullanma
+						if (attempts < maxAttempts) {
+							continue;
+						}
+
+						// Son denemede bile fallback kullanma, sadece Ask modu ile dene
+						try {
+							const contractPrompt = `Create a smart contract: ${description}`;
+							const aiResponse = await askAI(contractPrompt, walletAddress);
+							setContractDraft(aiResponse);
+							return `**🛠 Smart Contract Generated**\n\n**Description:** ${description}\n\n${aiResponse}\n\n*Contract generated successfully!*`;
+						} catch (finalError) {
+							return `**❌ Contract Generation Failed**\n\nPlease try again or check your connection.\n\n**Tip:** Try simpler descriptions like "voting contract" or "payment escrow"`;
+						}
 					}
-
-					if (/```/.test(aiCodeResponse)) {
-						return `**🛠 Contract Generated**\n\n**Description:** ${description}\n\n${aiCodeResponse}\n\n*Refine with: "Contract: add daily limits" or deploy with: "Contract: deploy"*`;
-					}
-					// Fallback if no code block in response
-					setContractDraft(aiCodeResponse);
-					return `**🛠 Contract Generated**\n\n**Description:** ${description}\n\n\`\`\`teal\n${aiCodeResponse}\n\`\`\`\n\n*Refine with additional requirements or deploy.*`;
-				} catch (err) {
-					console.error('AI contract generation failed:', err);
-					// Smart fallback based on description
-					const description = contractQuery || 'basic utility contract';
-					const smartFallback = generateSmartFallbackContract(description);
-					setContractDraft(smartFallback);
-					return `**🛠 Contract Generated (Smart Fallback)**\n\n**Description:** ${description}\n\n\`\`\`teal\n${smartFallback}\n\`\`\`\n\n*This is a smart fallback. Try again for AI generation.*`;
 				}
 			}
 		}
@@ -884,9 +902,19 @@ Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make 
 					// Regular AI processing
 					console.log('🚀 Sending question to AI:', userMessage.text);
 
-					// Check if it's wallet-related and enhance with transaction context
+					// Check if it's wallet-related and handle appropriately
 					let aiResponseText: string;
-					if (walletAddress && WalletTransactionService.isTransactionQuery(userMessage.text)) {
+					const isWalletQuery = walletAddress && WalletTransactionService.isTransactionQuery(userMessage.text);
+					const isBalanceQuery = userMessage.text.toLowerCase().includes('balance') ||
+						userMessage.text.toLowerCase().includes('bakiye') ||
+						userMessage.text.toLowerCase().includes('cüzdan') ||
+						userMessage.text.toLowerCase().includes('wallet');
+
+					if (isWalletQuery && isBalanceQuery) {
+						console.log('🔍 Detected balance query, providing balance info without code...');
+						// Balance sorgusu için sadece balance bilgisi ver, kod verme
+						aiResponseText = await handleBalanceCommand();
+					} else if (isWalletQuery) {
 						console.log('🔍 Detected wallet-related query, using wallet context...');
 						aiResponseText = await WalletTransactionService.askAIWithWalletContext(userMessage.text);
 					} else {
@@ -968,6 +996,12 @@ Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make 
 			highlighted = highlighted.replace(regex, `<span class='syntax-keyword'>$1</span>`);
 		});
 
+		// Comments (// lines) - highlight in green but keep the // characters
+		highlighted = highlighted.replace(
+			/^(\s*\/\/.*)$/gm,
+			`<span class='syntax-comment'>$1</span>`
+		);
+
 		// Strings (single and double quotes)
 		highlighted = highlighted.replace(
 			/(["'])(?:(?=(\\?))\2.)*?\1/g,
@@ -979,7 +1013,6 @@ Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make 
 			/\b\d+\.?\d*\b/g,
 			`<span class='syntax-number'>$&</span>`
 		);
-
 
 		// Function names (words followed by parentheses)
 		highlighted = highlighted.replace(
@@ -1206,9 +1239,29 @@ Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make 
 							</div>
 						)}
 
-						{/* Agent Commands Dropdown */}
+						{/* Persistent Agent Commands - Show below first prompt */}
+						{selectedMode === 'Agent' && (
+							<div className="persistent-agent-commands">
+								<div className="commands-label">Available Operations:</div>
+								<div className="agent-commands">
+									{agentCommands.map((cmd, index) => (
+										<button
+											key={index}
+											className="agent-command persistent"
+											style={{ backgroundColor: cmd.color }}
+											onClick={() => handleAgentCommandClick(cmd.command)}
+										>
+											<span className="command-name">{cmd.label}</span>
+											<span className="command-desc">{cmd.description}</span>
+										</button>
+									))}
+								</div>
+							</div>
+						)}
+
+						{/* Agent Commands Dropdown (temporary) */}
 						{showAgentCommands && selectedMode === 'Agent' && (
-							<div className="agent-commands">
+							<div className="agent-commands temporary">
 								{agentCommands.map((cmd, index) => (
 									<button
 										key={index}
@@ -1259,6 +1312,25 @@ Return ONLY the TEAL code in a fenced code block with 'teal' language tag. Make 
 				{/* Chat Input for when there are messages */}
 				{messages.length > 0 && (
 					<div className="chat-input-container">
+						{/* Persistent Agent Commands - Show above subsequent prompts */}
+						{selectedMode === 'Agent' && (
+							<div className="persistent-agent-commands compact">
+								<div className="agent-commands">
+									{agentCommands.map((cmd, index) => (
+										<button
+											key={index}
+											className="agent-command persistent compact"
+											style={{ backgroundColor: cmd.color }}
+											onClick={() => handleAgentCommandClick(cmd.command)}
+										>
+											<span className="command-name">{cmd.label}</span>
+											<span className="command-desc">{cmd.description}</span>
+										</button>
+									))}
+								</div>
+							</div>
+						)}
+
 						<form onSubmit={handleInputSubmit} className="chat-form">
 							<div className="input-wrapper">
 								<input
