@@ -512,7 +512,7 @@ FRONTEND_URL=https://your-domain.com
 
 ---
 
-**Made with ❤️, ☕, and 🤖 for the Algorand Ecosystem.**
+
 
 *Empowering the future of decentralized finance through intelligent automation.*
 
@@ -705,13 +705,5 @@ DEPLOYER_MNEMONIC="YOUR 25 WORD MNEMONIC FOR DEPLOY (DEV ONLY)"
 - [ ] Add comprehensive testing
 - [ ] Implement CI/CD pipeline
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details
+---
+**Made by Efe Yılmaz with ❤️, ☕, and 🤖 for the Algorand Ecosystem.**
