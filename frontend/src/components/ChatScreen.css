@@ -505,6 +505,46 @@
 	/* Slightly transparent for subtle look */
 }
 
+/* Initial Mode Selection Buttons */
+.initial-mode-select {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.initial-mode-btn {
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: #fff;
+	padding: 6px 14px;
+	border-radius: 20px;
+	font-size: 13px;
+	cursor: pointer;
+	backdrop-filter: blur(6px);
+	transition: background .2s, border-color .2s;
+}
+
+.initial-mode-btn.active {
+	background: linear-gradient(135deg, #6a5af9, #8a7dff);
+	border-color: #988bff;
+}
+
+.initial-mode-btn:hover:not(.active) {
+	background: rgba(255, 255, 255, 0.15);
+}
+
+.initial-mode-btn:disabled {
+	opacity: .4;
+	cursor: not-allowed;
+}
+
+.mode-hint {
+	margin-top: -4px;
+	margin-bottom: 10px;
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.6);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
 	.chat-container {
@@ -963,4 +1003,56 @@
 	height: 16px;
 	filter: brightness(0) invert(1);
 	/* Make logo white */
+}
+
+/* Mode Selection Dropdown Styles */
+.mode-selection {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 1rem 0;
+	padding: 0 1rem;
+}
+
+.mode-label {
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 0.9rem;
+	font-weight: 500;
+	margin-bottom: 0.3rem;
+}
+
+.mode-dropdown {
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 8px;
+	padding: 0.6rem 1rem;
+	color: white;
+	font-size: 0.9rem;
+	outline: none;
+	transition: all 0.2s ease;
+}
+
+.mode-dropdown:focus {
+	border-color: rgba(255, 255, 255, 0.4);
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.mode-dropdown:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.mode-dropdown option {
+	background: #1a1a1a;
+	color: white;
+	padding: 0.5rem;
+}
+
+.mode-locked {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.8rem;
+	margin-top: 0.3rem;
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
 }

@@ -3,6 +3,7 @@ import './ChatScreen.css';
 import { askAI } from '../services/aiService';
 import SplashCursor from './SplashCursor';
 import WalletTransactionService from '../services/walletTransactionService';
+import SmartContractService from '../services/smartContractService';
 
 interface Message {
 	id: string;
@@ -17,6 +18,7 @@ interface ChatSession {
 	name: string;
 	messages: Message[];
 	lastUpdated: Date;
+	mode: 'Ask' | 'Agent'; // Her chat session'ın kendi modu
 }
 
 interface ChatScreenProps {
@@ -42,7 +44,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 	const [contractTag, setContractTag] = useState<string>('');
 	const [hasActiveTag, setHasActiveTag] = useState<boolean>(false);
 	const [chatSessions, setChatSessions] = useState<ChatSession[]>([
-		{ id: 'chat-1', name: 'Chat 1', messages: [], lastUpdated: new Date() }
+		{ id: 'chat-1', name: 'Chat 1', messages: [], lastUpdated: new Date(), mode: 'Ask' }
 	]);
 
 	// Get wallet address from localStorage (from Pera Wallet connection)
@@ -55,11 +57,10 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		{ command: '/send', label: 'Send to Wallet:', description: 'Send ALGO or ASAs to a wallet address', color: '#FFB6C1', placeholder: 'Enter recipient wallet address...' },
 		{ command: '/getBalance', label: 'Get Balance:', description: 'Check wallet balance', color: '#DDA0DD', placeholder: 'Press Enter to check balance' },
 		{ command: '/transactions', label: 'Last Transactions:', description: 'View recent wallet transactions', color: '#B0E0E6', placeholder: 'Press Enter to view transactions' },
+		{ command: '/deployContract', label: 'Deploy Contract:', description: 'Deploy Send-to-Wallet smart contract', color: '#98FB98', placeholder: 'Press Enter to deploy' },
+		{ command: '/developContract', label: 'Develop Contract:', description: 'Generate a smart contract from a description', color: '#7FFFD4', placeholder: 'Describe the contract you want...' },
 		{ command: '/sellAlgo', label: 'Sell ALGO:', description: 'Sell ALGO tokens', color: '#87CEEB', placeholder: 'Enter amount to sell...' },
-		{ command: '/buyAlgo', label: 'Buy ALGO:', description: 'Buy ALGO tokens', color: '#F0E68C', placeholder: 'Enter amount to buy...' },
-		{ command: '/swapAlgo', label: 'Swap ALGO:', description: 'Swap tokens', color: '#FFA07A', placeholder: 'Enter swap details...' },
-		{ command: '/openDEX', label: 'Open DEX:', description: 'Open DEX interface', color: '#98FB98', placeholder: 'Press Enter to open DEX' },
-		{ command: '/connectTinyman', label: 'Connect To Tinyman:', description: 'Connect to Tinyman and select pools', color: '#DEB887', placeholder: 'Select Tinyman pool...' }
+		{ command: '/buyAlgo', label: 'Buy ALGO:', description: 'Buy ALGO tokens', color: '#F0E68C', placeholder: 'Enter amount to buy...' }
 	];
 
 	const questions = [
@@ -88,9 +89,10 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		const savedSessions = localStorage.getItem('chatSessions');
 		if (savedSessions) {
 			const parsedSessions = JSON.parse(savedSessions);
-			// Convert string dates back to Date objects
+			// Convert string dates back to Date objects and add mode if missing
 			const sessionsWithDates = parsedSessions.map((session: any) => ({
 				...session,
+				mode: session.mode || 'Ask', // Default mode eski sessions için
 				lastUpdated: new Date(session.lastUpdated),
 				messages: session.messages.map((msg: any) => ({
 					...msg,
@@ -98,6 +100,12 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 				}))
 			}));
 			setChatSessions(sessionsWithDates);
+
+			// First chat'in mode'unu set et
+			const firstChat = sessionsWithDates[0];
+			if (firstChat) {
+				setSelectedMode(firstChat.mode);
+			}
 		}
 	}, []);
 
@@ -112,16 +120,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		setInputValue(prompt);
 	};
 
-	const handleModeChange = (mode: 'Ask' | 'Agent') => {
-		// Prevent mode switching if there's an active tag
-		if (hasActiveTag || contractTag) {
-			return; // Don't allow mode switching
-		}
-
-		setSelectedMode(mode);
-		setShowAgentCommands(false);
-		setActiveCommand('');
-	};
+	// Mode changes are implicit now; function removed.
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
@@ -133,8 +132,15 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 
 		// Auto-switch modes and show agent commands based on "/" character
 		if (value.startsWith('/')) {
-			if (selectedMode === 'Ask') {
+			// Switch to Agent only if no messages yet (mode locked after first message)
+			if (selectedMode === 'Ask' && messages.length === 0) {
 				setSelectedMode('Agent');
+				// Persist mode in current chat
+				setChatSessions(prev => {
+					const updated: ChatSession[] = prev.map(c => c.id === currentChatId ? { ...c, mode: 'Agent' as 'Agent' } : c);
+					localStorage.setItem('chatSessions', JSON.stringify(updated));
+					return updated;
+				});
 			}
 			// Always show agent commands when "/" is typed, regardless of current mode
 			if (value === '/') {
@@ -186,10 +192,8 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 				baseClass += " send-command";
 			} else if (inputValue.toLowerCase().includes('get balance:')) {
 				baseClass += " balance-command";
-			} else if (inputValue.toLowerCase().includes('swap algo:') || inputValue.toLowerCase().includes('buy algo:') || inputValue.toLowerCase().includes('sell algo:')) {
-				baseClass += " swap-command";
-			} else if (inputValue.toLowerCase().includes('connect to tinyman:')) {
-				baseClass += " tinyman-command";
+			} else if (inputValue.toLowerCase().includes('buy algo:') || inputValue.toLowerCase().includes('sell algo:')) {
+				baseClass += " swap-command"; // reuse swap style for buy/sell
 			}
 		}
 
@@ -210,7 +214,8 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			id: `chat-${chatNumber}`,
 			name: `Chat ${chatNumber}`,
 			messages: [],
-			lastUpdated: new Date()
+			lastUpdated: new Date(),
+			mode: selectedMode // Yeni chat current mode ile başlasın
 		};
 		const updatedSessions = [...chatSessions, newChat];
 		setChatSessions(updatedSessions);
@@ -224,6 +229,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		if (chat) {
 			setCurrentChatId(chatId);
 			setMessages(chat.messages);
+			setSelectedMode(chat.mode); // Chat'in kendi mode'unu yükle
 			setShowChatDock(false);
 		}
 	};
@@ -243,6 +249,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			const newCurrentChat = updatedSessions[0];
 			setCurrentChatId(newCurrentChat.id);
 			setMessages(newCurrentChat.messages);
+			setSelectedMode(newCurrentChat.mode); // Yeni chat'in mode'unu da yükle
 		}
 	};
 
@@ -275,10 +282,6 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			} else {
 				return "❌ Please provide a valid wallet address after 'Send to Wallet:'";
 			}
-		}
-
-		if (lowerInput.startsWith('connect to tinyman:')) {
-			return `**🏊 Tinyman Pool Selection**\n\n**Available Pools:**\n• **ALGO/USDC** - Liquidity: $2.1M\n• **ALGO/USDT** - Liquidity: $1.8M  \n• **ALGO/AKTA** - Liquidity: $450K\n• **ALGO/GARD** - Liquidity: $320K\n\n*Select a pool to connect and start trading on Tinyman DEX.*`;
 		}
 
 		if (lowerInput.startsWith('get balance:')) {
@@ -343,14 +346,84 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			}
 		}
 
-		if (lowerInput.startsWith('sell algo:') || lowerInput.startsWith('buy algo:') || lowerInput.startsWith('swap algo:')) {
-			const action = lowerInput.startsWith('sell') ? 'Sell' : lowerInput.startsWith('buy') ? 'Buy' : 'Swap';
+		if (lowerInput.startsWith('sell algo:') || lowerInput.startsWith('buy algo:')) {
+			const action = lowerInput.startsWith('sell') ? 'Sell' : 'Buy';
 			const amount = input.split(':')[1]?.trim() || '';
 			return `**⚡ ${action} ALGO Transaction**\n\n${amount ? `**Amount:** ${amount}\n` : ''}**Action:** ${action} ALGO\n**Status:** Ready for signature\n\n*Confirm in your Pera Wallet to complete the ${action.toLowerCase()} operation.*`;
 		}
 
-		if (lowerInput.startsWith('open dex:')) {
-			return `**🔗 DEX Interface**\n\n**Available DEXes:**\n• **Tinyman** - Leading Algorand DEX\n• **AlgoFi** - Lending & Trading\n• **Pact** - AMM Protocol\n\n*Connect your wallet to start trading on your preferred DEX.*`;
+		if (lowerInput.startsWith('deploy contract:')) {
+			try {
+				const connectedWallet = walletAddress;
+				if (!connectedWallet) {
+					return "❌ **No Wallet Connected**\n\nPlease connect your Pera Wallet to deploy smart contracts.";
+				}
+
+				// Show loading state and start deployment
+				setTimeout(async () => {
+					try {
+						const { approval, clear } = SmartContractService.getSendToWalletContract();
+						const deployment = await SmartContractService.deployContract(
+							connectedWallet,
+							approval,
+							clear
+						);
+
+						if (deployment.unsignedTxn) {
+							// For now, just show that the contract transaction is ready
+							// In a real implementation, you would handle Pera Wallet signing here
+
+							// Update message with ready state
+							setMessages(prev => {
+								const updated = [...prev];
+								if (updated.length > 0) {
+									const lastMsg = updated[updated.length - 1];
+									if (!lastMsg.isUser) {
+										lastMsg.text = `**📋 Smart Contract Ready for Deployment**\n\n**Contract Type:** Send-to-Wallet\n**Network:** Algorand TestNet\n**Transaction:** Prepared\n**Status:** Ready for signature\n\n*Contract transaction has been prepared. In a full implementation, this would automatically open Pera Wallet for signing.*\n\n**Contract Features:**\n• Secure token transfers\n• Built-in fee management\n• Transfer statistics\n• Admin controls`;
+									}
+								}
+								return updated;
+							});
+						}
+					} catch (error) {
+						console.error('Contract deployment error:', error);
+						setMessages(prev => {
+							const updated = [...prev];
+							if (updated.length > 0) {
+								const lastMsg = updated[updated.length - 1];
+								if (!lastMsg.isUser) {
+									lastMsg.text = `**❌ Contract Deployment Failed**\n\n${error instanceof Error ? error.message : 'Unknown deployment error'}\n\n*Please try again later or check your connection.*`;
+								}
+							}
+							return updated;
+						});
+					}
+				}, 100);
+
+				return `**🚀 Deploying Smart Contract...**\n\n**Contract Type:** Send-to-Wallet\n**Network:** Algorand TestNet\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n\n*Preparing contract deployment transaction...*`;
+			} catch (error) {
+				return "❌ **Error**: Unable to deploy smart contract. Please try again.";
+			}
+		}
+
+		if (lowerInput.startsWith('develop contract:')) {
+			// Extract description after the colon
+			const description = input.split(':')[1]?.trim() || 'generic utility';
+			// Try dynamic generation via AI
+			try {
+				const prompt = `You are an Algorand smart contract generator. Generate a TEAL v8 contract based on this description: "${description}".\nReturn ONLY a fenced code block with 'teal' as language and include minimal explanatory header comments. Avoid extraneous commentary outside the code block.`;
+				const aiCodeResponse = await askAI(prompt, walletAddress);
+				// If response already contains a code block we just wrap standard message around it
+				if (/```/.test(aiCodeResponse)) {
+					return `**🛠 Contract Draft Generated**\n\n**Description:** ${description}\n\n${aiCodeResponse}\n\n*Refine by adding: state keys, access control, fees, events.*`;
+				}
+				// Otherwise embed it
+				return `**🛠 Contract Draft Generated**\n\n**Description:** ${description}\n\n\`\`\`teal\n${aiCodeResponse}\n\`\`\`\n\n*Refine by adding: state keys, access control, fees, events.*`;
+			} catch (err) {
+				// Fallback static skeleton
+				const code = `// Algorand Smart Contract (TEAL)\n// Description: ${description}\n// Generated by Aether AI (fallback)\n\n#pragma version 8\n\n// Global state keys\nbyte \"Admin\"\naddr YOUR_ADMIN_ADDRESS_HERE\n==\n\n// Basic no-op always accept (placeholder)\nint 1`;
+				return `**🛠 Contract Draft Generated (Fallback)**\n\n**Description:** ${description}\n\n\`\`\`teal\n${code}\n\`\`\`\n\n*Refine again for a richer version.*`;
+			}
 		}
 
 		return ''; // Return empty string if not a special command
@@ -506,11 +579,6 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			`<span class='syntax-number'>$&</span>`
 		);
 
-		// Comments (// and /* */)
-		highlighted = highlighted.replace(
-			/(\/\/.*$|\/\*[\s\S]*?\*\/)/gm,
-			`<span class='syntax-comment'>$1</span>`
-		);
 
 		// Function names (words followed by parentheses)
 		highlighted = highlighted.replace(
@@ -567,11 +635,6 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 			}
 		);
 
-		// Replace // comments with spans (remove // markers)
-		formattedText = formattedText.replace(
-			/\/\/ (.+)$/gm,
-			"<span class='hl-comment'>$1</span>"
-		);
 
 		// Replace URLs with clickable links
 		formattedText = formattedText.replace(
@@ -688,6 +751,26 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 				{/* Chat Input - Moved right under the question */}
 				{messages.length === 0 && (
 					<div className="chat-input-container">
+						{/* Mode quick select (only visible before first message) */}
+						<div className="initial-mode-select">
+							<button
+								className={`initial-mode-btn ${selectedMode === 'Ask' ? 'active' : ''}`}
+								onClick={() => setSelectedMode('Ask')}
+								disabled={messages.length > 0}
+							>
+								Ask
+							</button>
+							<button
+								className={`initial-mode-btn ${selectedMode === 'Agent' ? 'active' : ''}`}
+								onClick={() => setSelectedMode('Agent')}
+								disabled={messages.length > 0}
+							>
+								Agent
+							</button>
+						</div>
+						{selectedMode === 'Agent' && (
+							<p className="mode-hint">Type '/' to view agent commands or use <strong>Develop Contract:</strong> to generate a contract.</p>
+						)}
 						<form onSubmit={handleInputSubmit} className="chat-form">
 							<div className="input-wrapper">
 								<input
@@ -739,25 +822,8 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 							</div>
 						)}
 
-						{/* Mode Selection */}
-						<div className="mode-selection">
-							<div className="mode-tabs">
-								<button
-									className={`mode-tab ${selectedMode === 'Ask' ? 'active' : ''}`}
-									onClick={() => handleModeChange('Ask')}
-								>
-									Ask
-									{selectedMode === 'Ask' && <div className="mode-indicator"></div>}
-								</button>
-								<button
-									className={`mode-tab ${selectedMode === 'Agent' ? 'active' : ''}`}
-									onClick={() => handleModeChange('Agent')}
-								>
-									Agent
-									{selectedMode === 'Agent' && <div className="mode-indicator"></div>}
-								</button>
-							</div>
-						</div>
+
+						{/* Mode is chosen implicitly: Ask by default, switches to Agent on '/' before first message. Removed manual dropdown per request. */}
 
 						{/* Disclaimer at Bottom */}
 						<p className="disclaimer">AI can make mistakes, so double check it.</p>
@@ -811,25 +877,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 							</div>
 						</form>
 
-						{/* Mode Selection */}
-						<div className="mode-selection">
-							<div className="mode-tabs">
-								<button
-									className={`mode-tab ${selectedMode === 'Ask' ? 'active' : ''}`}
-									onClick={() => handleModeChange('Ask')}
-								>
-									Ask
-									{selectedMode === 'Ask' && <div className="mode-indicator"></div>}
-								</button>
-								<button
-									className={`mode-tab ${selectedMode === 'Agent' ? 'active' : ''}`}
-									onClick={() => handleModeChange('Agent')}
-								>
-									Agent
-									{selectedMode === 'Agent' && <div className="mode-indicator"></div>}
-								</button>
-							</div>
-						</div>
+						{/* Mode tabs removed; mode locked once first message is sent. */}
 
 						{/* Disclaimer at Bottom */}
 						<p className="disclaimer">AI can make mistakes, so double check it.</p>
