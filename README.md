@@ -18,10 +18,7 @@ The main goals of Aether AI are:
 - 🎮 **Agent Command System** - 7 powerful commands for direct blockchain interactions:
   - `/send` - Send ALGO or ASAs to any wallet address
   - `/getBalance` - Check wallet balance with portfolio analytics  
-  - `/sellAlgo` & `/buyAlgo` - Trade ALGO with smart order routing
-  - `/swapAlgo` - Token swaps with slippage protection
-  - `/openDEX` - Multi-DEX aggregation and arbitrage
-  - `/connectTinyman` - Advanced Tinyman integration with yield strategies
+  - `/conract` - AI write and deploy conracts
 - 💸 **Real Blockchain Operations** - Actual on-chain transactions, not simulations
 - 🎨 **Dynamic UI** - Color-coded agent commands with visual feedback
 - 🔍 **Smart Contract Library** - Production-ready PyTeal contracts for each command
@@ -290,45 +287,15 @@ export const config = {
 - Portfolio analytics with yield calculations
 - Historical balance tracking
 
-**🔵 Sell ALGO (`/sellAlgo`)**
-```
-/sellAlgo 10
-```
-- Sell ALGO tokens with smart routing
-- Automatic slippage protection
-- Best price execution across DEXs
 
-**💛 Buy ALGO (`/buyAlgo`)**
-```
-/buyAlgo 15.5 USDC
-```
-- Buy ALGO with various tokens
-- MEV protection and optimal routing
-- Real-time price quotes
 
-**🍑 Swap ALGO (`/swapAlgo`)**
+**🍃 Develop Contracy (`/contract`)**
 ```
-/swapAlgo 5 ALGO to USDC
+/contract
 ```
-- Advanced token swapping with AMM integration
-- Multi-pool routing for best rates
-- Slippage protection (1% default)
-
-**🍃 Open DEX (`/openDEX`)**
-```
-/openDEX
-```
-- Access multi-DEX aggregation interface
-- Cross-DEX arbitrage opportunities
-- Unified trading across Tinyman, AlgoFi, Pact
-
-**🥖 Connect Tinyman (`/connectTinyman`)**
-```
-/connectTinyman ALGO/USDC
-```
-- Deep Tinyman integration
-- Pool analytics and impermanent loss calculation
-- Yield farming strategies and optimization
+- Develop a contract using Aether
+- Deploy your contract easily
+- Track and test with algokit support
 
 ## 🧪 Testing
 
@@ -398,23 +365,6 @@ ALGORAND_INDEXER=https://mainnet-idx.algonode.cloud
 FRONTEND_URL=https://your-domain.com
 ```
 
-## 🤝 Contributing
-
-1. **Fork the repository**
-2. **Create feature branch**
-   ```bash
-   git checkout -b feature/amazing-new-feature
-   ```
-3. **Commit changes**
-   ```bash
-   git commit -m 'Add amazing new feature'
-   ```
-4. **Push to branch**
-   ```bash
-   git push origin feature/amazing-new-feature
-   ```
-5. **Open Pull Request**
-
 ### Development Guidelines
 
 - Follow TypeScript strict mode requirements
@@ -449,8 +399,8 @@ FRONTEND_URL=https://your-domain.com
 ### Immediate (v1.1)
 - [ ] MainNet support for production trading
 - [ ] Advanced portfolio analytics dashboard
-- [ ] Transaction history and export features
-- [ ] Mobile app development (React Native)
+- [x] Transaction history and export features
+- [x] Mobile app development (React Native)
 
 ### Short Term (v1.2-1.3)
 - [ ] Multi-language support (Turkish, Spanish, French)
@@ -496,25 +446,7 @@ FRONTEND_URL=https://your-domain.com
 - ✅ **Development Environment**: Docker-based development setup
 - ✅ **Security**: Comprehensive .gitignore and security measures
 
-## 👥 Team & Credits
-
-- **Lead Developer**: Advanced AI & Blockchain Integration Specialist
-- **Blockchain Framework**: Algorand - Pure Proof of Stake consensus
-- **AI Platform**: Google Gemini - Advanced language model
-- **Wallet Integration**: Pera Wallet - Official Algorand wallet
-
-## 📞 Support & Community
-
-- **GitHub Issues**: Report bugs and feature requests
-- **Documentation**: Comprehensive guides and API documentation
-- **Discord**: Join our developer community (coming soon)
-- **Twitter**: Follow [@AetherAI](https://twitter.com/aether-ai) for updates
-
 ---
-
-
-
-*Empowering the future of decentralized finance through intelligent automation.*
 
 ## 🌐 Deploy with AlgoKit
 
