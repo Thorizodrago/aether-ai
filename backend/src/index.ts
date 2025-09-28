@@ -122,6 +122,49 @@ app.post('/wallet/transactions/summary', async (req, res) => {
 	}
 });
 
+// Wallet balance endpoint
+app.post('/wallet/balance', async (req, res) => {
+	try {
+		const { walletAddress } = req.body;
+
+		if (!walletAddress) {
+			return res.status(400).json({
+				error: 'Wallet address is required'
+			});
+		}
+
+		console.log(`💰 Wallet balance request for: ${walletAddress}`);
+
+		const { getAccountBalance } = await import('./libs/algoClient');
+		const balanceInfo = await getAccountBalance(walletAddress);
+
+		if (!balanceInfo.success) {
+			return res.status(400).json({
+				error: balanceInfo.error,
+				address: walletAddress
+			});
+		}
+
+		return res.json({
+			success: true,
+			address: balanceInfo.address,
+			algoBalance: balanceInfo.algoBalance,
+			availableBalance: balanceInfo.availableBalance,
+			minBalance: balanceInfo.minBalance,
+			assets: balanceInfo.assets,
+			totalAssets: balanceInfo.totalAssets,
+			timestamp: new Date().toISOString()
+		});
+
+	} catch (error) {
+		console.error('Wallet Balance Endpoint Error:', error);
+		return res.status(500).json({
+			error: 'Failed to fetch wallet balance',
+			details: error instanceof Error ? error.message : 'Unknown error'
+		});
+	}
+});
+
 // Root route
 app.get('/', (req, res) => {
 	res.json({

@@ -131,6 +131,81 @@ export const summarizeTransactions = (transactions: any[], walletAddress: string
 	return summaries.join('\n');
 };
 
+// Helper function to get account balance and assets
+export const getAccountBalance = async (walletAddress: string) => {
+	try {
+		if (!algosdk.isValidAddress(walletAddress)) {
+			throw new Error('Invalid wallet address');
+		}
+
+		// Query account information from indexer
+		const accountInfo = await indexerClient.lookupAccountByID(walletAddress).do();
+
+		if (!accountInfo.account) {
+			throw new Error('Account not found');
+		}
+
+		const account = accountInfo.account;
+
+		// Get ALGO balance (convert from microALGO)
+		const algoBalance = account.amount / 1000000;
+		const minBalance = account['min-balance'] / 1000000;
+		const availableBalance = algoBalance - minBalance;
+
+		// Get ASA (Algorand Standard Assets) balances
+		const assets = account.assets || [];
+		const assetBalances = [];
+
+		for (const asset of assets) {
+			try {
+				// Get asset information
+				const assetInfo = await indexerClient.lookupAssetByID(asset['asset-id']).do();
+				const assetParams = assetInfo.asset.params;
+
+				const decimals = assetParams.decimals || 0;
+				const unitName = assetParams['unit-name'] || 'Unknown';
+				const name = assetParams.name || 'Unknown Asset';
+				const balance = asset.amount / Math.pow(10, decimals);
+
+				if (balance > 0) {
+					assetBalances.push({
+						assetId: asset['asset-id'],
+						unitName,
+						name,
+						balance,
+						decimals
+					});
+				}
+			} catch (assetError) {
+				console.warn(`Could not fetch info for asset ${asset['asset-id']}:`, assetError);
+			}
+		}
+
+		return {
+			success: true,
+			address: walletAddress,
+			algoBalance,
+			availableBalance,
+			minBalance,
+			assets: assetBalances,
+			totalAssets: assets.length
+		};
+
+	} catch (error) {
+		console.error('Error fetching account balance:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error occurred',
+			address: walletAddress,
+			algoBalance: 0,
+			availableBalance: 0,
+			minBalance: 0,
+			assets: [],
+			totalAssets: 0
+		};
+	}
+};
+
 export default {
 	algodClient,
 	indexerClient,
@@ -138,5 +213,6 @@ export default {
 	checkIndexerConnection,
 	getConnectedWallet,
 	getLastTransactions,
-	summarizeTransactions
+	summarizeTransactions,
+	getAccountBalance
 };
