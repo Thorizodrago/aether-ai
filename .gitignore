@@ -1,0 +1,296 @@
+# ===========================================
+# SECURITY - SENSITIVE INFORMATION
+# ===========================================
+# NEVER commit these files - they contain sensitive data
+# API Keys, Private Keys, Mnemonics, Secrets
+.env*
+*.env*
+.env
+.env.local
+.env.development
+.env.development.local
+.env.staging
+.env.production
+.env.production.local
+.env.test
+.env.test.local
+
+# Algorand/Blockchain sensitive files
+*.mnemonic
+*.seed
+*.privatekey
+*.private
+*.secret
+*.keystore
+*wallet*
+*mnemonic*
+*private-key*
+*secret*
+*api-key*
+
+# Google AI/Gemini API Keys
+*gemini*key*
+*google*api*
+*ai*key*
+
+# Firebase/Auth sensitive configs
+firebase-config.js
+firebase-adminsdk-*.json
+service-account*.json
+
+# Database credentials & connections
+database.json
+db-config.json
+connection-string*
+
+# JWT Secrets & Auth tokens  
+jwt-secret*
+auth-token*
+session-secret*
+
+# ===========================================
+# DEPENDENCY DIRECTORIES
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ===========================================
+# BUILD OUTPUTS
+# ===========================================
+dist/
+build/
+*.tsbuildinfo
+out/
+.next/
+.nuxt/
+.output/
+
+# ===========================================
+# RUNTIME & TEMPORARY FILES  
+# ===========================================
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+*.log
+*.log.*
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
+.temp/
+
+# ===========================================
+# DEVELOPMENT & TESTING
+# ===========================================
+# Test coverage
+coverage/
+*.lcov
+.nyc_output
+.jest-cache/
+
+# Development caches
+.eslintcache
+.cache
+.parcel-cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# ===========================================
+# PLATFORM SPECIFIC
+# ===========================================
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ===========================================
+# IDE & EDITORS
+# ===========================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Vim/Neovim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# ===========================================
+# DOCKER & CONTAINERS
+# ===========================================
+.dockerignore
+*.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+Dockerfile.local
+
+# ===========================================
+# DATABASE FILES
+# ===========================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*.s3db
+*.sl3
+*.rdb
+*.fdb
+
+# ===========================================
+# PYTHON (for AI/ML services)
+# ===========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.coverage.*
+
+# ===========================================
+# BLOCKCHAIN & WEB3 SPECIFIC
+# ===========================================
+# Algorand SDK generated files
+*.algod
+*.kmd
+algod-data/
+kmd-data/
+
+# Smart contract compilation artifacts
+*.teal
+*.tok
+contract-build/
+artifacts/
+
+# Blockchain node data
+blockchain-data/
+testnet-data/
+mainnet-data/
+
+# ===========================================
+# AI & ML MODELS
+# ===========================================
+# Large model files
+*.bin
+*.h5
+*.pkl
+*.model
+models/
+checkpoints/
+
+# ===========================================
+# LOGS & MONITORING
+# ===========================================
+logs/
+*.log
+*.log.*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ===========================================
+# MISCELLANEOUS
+# ===========================================
+# OS generated files
+.fseventsd
+.fseventsd/*
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Package managers
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/

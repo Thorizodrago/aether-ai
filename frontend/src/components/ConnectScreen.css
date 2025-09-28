@@ -1,0 +1,214 @@
+/* Connect Screen Styles */
+.connect-screen {
+	min-height: 100vh;
+	background: #000000;
+	/* Pure black background */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+	font-family: 'Lora', serif;
+}
+
+/* Gradient Blobs - Aether AI Color Palette */
+.gradient-blob {
+	position: absolute;
+	border-radius: 50%;
+	filter: blur(120px);
+	opacity: 0.6;
+	animation: float 8s ease-in-out infinite;
+}
+
+.blob-1 {
+	width: 300px;
+	/* Reduced from 400px */
+	height: 300px;
+	background: radial-gradient(circle, #9c88ff 0%, #9c88ff 100%);
+	top: 15%;
+	left: 15%;
+	animation-delay: 0s;
+}
+
+.blob-2 {
+	width: 250px;
+	/* Reduced from 350px */
+	height: 250px;
+	background: radial-gradient(circle, #00bfff 0%, #00bfff 100%);
+	top: 50%;
+	right: 20%;
+	animation-delay: 3s;
+}
+
+.blob-3 {
+	width: 200px;
+	/* Reduced from 300px */
+	height: 200px;
+	background: radial-gradient(circle, #ff63fa 0%, #ff63fa 100%);
+	bottom: 25%;
+	left: 50%;
+	animation-delay: 6s;
+}
+
+@keyframes float {
+
+	0%,
+	100% {
+		transform: translateY(0px) scale(1);
+	}
+
+	50% {
+		transform: translateY(-20px) scale(1.05);
+	}
+}
+
+/* Content */
+.connect-content {
+	text-align: center;
+	z-index: 10;
+	position: relative;
+	max-width: 600px;
+	padding: 2rem;
+}
+
+/* Header with Logo and Title */
+.header-section {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: -16px;
+	margin-bottom: 2rem;
+}
+
+.main-logo {
+	width: 80px;
+	height: 80px;
+	object-fit: contain;
+}
+
+.main-title {
+	font-family: 'Lora', serif;
+	font-size: 4rem;
+	font-weight: 400;
+	/* Normal weight - no glow effect */
+	color: #FFFFFF;
+	margin: 0;
+}
+
+.subtitle {
+	font-family: 'Lora', serif;
+	font-size: 1.25rem;
+	color: #FFFFFF;
+	margin-bottom: 3rem;
+	line-height: 1.6;
+	opacity: 0.9;
+}
+
+.connect-button {
+	background: #1a1a1a;
+	border: 2px solid #333;
+	color: #FFFFFF;
+	font-family: 'Lora', serif;
+	font-size: 1.125rem;
+	font-weight: 500;
+	padding: 1rem 2.5rem;
+	border-radius: 12px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.connect-button::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 12px;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	z-index: -1;
+}
+
+.connect-button:hover::before {
+	opacity: 1;
+}
+
+.connect-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 25px rgba(0, 191, 255, 0.2);
+	border-color: #00bfff;
+}
+
+.connect-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+.connect-button:active {
+	transform: translateY(0);
+}
+
+.connect-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
+
+/* Error Message */
+.error-message {
+	background: rgba(255, 71, 87, 0.1);
+	border: 1px solid #ff4757;
+	color: #ff4757;
+	padding: 1rem;
+	border-radius: 8px;
+	margin-bottom: 2rem;
+	font-family: 'Lora', serif;
+	font-size: 0.9rem;
+}
+
+/* Network Info */
+.network-info {
+	margin-top: 1.5rem;
+	font-family: 'Lora', serif;
+	color: #00bfff;
+	font-size: 0.9rem;
+	opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.main-title {
+		font-size: 2.5rem;
+	}
+
+	.subtitle {
+		font-size: 1rem;
+	}
+
+	.connect-content {
+		padding: 1rem;
+	}
+
+	.gradient-blob {
+		filter: blur(60px);
+	}
+
+	.blob-1 {
+		width: 200px;
+		height: 200px;
+	}
+
+	.blob-2 {
+		width: 150px;
+		height: 150px;
+	}
+
+	.blob-3 {
+		width: 120px;
+		height: 120px;
+	}
+}
