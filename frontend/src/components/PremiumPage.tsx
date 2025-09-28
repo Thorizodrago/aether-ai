@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './PremiumPage.css';
+import SplashCursor from './SplashCursor';
 
 interface PremiumPlan {
 	id: string;
@@ -116,6 +117,7 @@ const PremiumPage = ({ onBack }: PremiumPageProps) => {
 
 	return (
 		<div className="premium-page">
+			<SplashCursor />
 			<div className="premium-background">
 				<div className="premium-blob blob-1"></div>
 				<div className="premium-blob blob-2"></div>

@@ -5,6 +5,7 @@ import { checkAlgorandConnection, checkIndexerConnection } from './libs/algoClie
 import authRoutes from './routes/auth';
 import txRoutes from './routes/tx';
 import { generateAlgorandResponse } from './geminiClient';
+import WalletService from './services/walletService';
 
 const app = express();
 
@@ -41,17 +42,81 @@ app.post('/ai/ask', async (req, res) => {
 		console.log(`🤖 AI Request from wallet: ${walletAddress || 'anonymous'}`);
 		console.log(`📝 Question: ${question}`);
 
-		const response = await generateAlgorandResponse(question);
+		// Check if this is a wallet-related query
+		let enhancedQuestion = question;
+		let walletContext = '';
+
+		if (walletAddress && WalletService.isWalletCommand(question)) {
+			console.log('🔍 Detected wallet-related query, fetching transaction data...');
+
+			const transactionCount = WalletService.extractTransactionCount(question);
+			const walletData = await WalletService.getTransactionsForAI(walletAddress, transactionCount);
+
+			if (walletData.success && walletData.summary) {
+				walletContext = `\n\nWallet Context for ${walletAddress}:\n${walletData.summary}`;
+				enhancedQuestion = question + walletContext;
+				console.log('✅ Enhanced question with wallet transaction context');
+			} else if (walletData.error) {
+				console.log(`⚠️ Could not fetch wallet data: ${walletData.error}`);
+				walletContext = `\n\nNote: Unable to fetch recent transactions for wallet analysis.`;
+				enhancedQuestion = question + walletContext;
+			}
+		}
+
+		console.log('🤖 Generating AI response for Algorand question...');
+		const response = await generateAlgorandResponse(enhancedQuestion);
+		console.log('✅ AI response generated successfully');
 
 		return res.json({
 			response,
-			timestamp: new Date().toISOString()
+			timestamp: new Date().toISOString(),
+			walletContext: walletContext ? 'Transaction data included' : 'No wallet context'
 		});
 
 	} catch (error) {
 		console.error('AI Endpoint Error:', error);
 		return res.status(500).json({
 			error: 'Failed to generate AI response',
+			details: error instanceof Error ? error.message : 'Unknown error'
+		});
+	}
+});
+
+// Dedicated wallet transaction summary endpoint
+app.post('/wallet/transactions/summary', async (req, res) => {
+	try {
+		const { walletAddress, count = 5 } = req.body;
+
+		if (!walletAddress) {
+			return res.status(400).json({
+				error: 'Wallet address is required'
+			});
+		}
+
+		console.log(`📊 Wallet transaction summary request for: ${walletAddress}`);
+		console.log(`📝 Requesting last ${count} transactions`);
+
+		const summary = await WalletService.summarizeLastTransactions(walletAddress, count);
+
+		if (!summary.success) {
+			return res.status(400).json({
+				error: summary.error,
+				summary: summary.summary
+			});
+		}
+
+		return res.json({
+			success: true,
+			walletAddress: summary.walletAddress,
+			transactionCount: summary.transactionCount,
+			summary: summary.summary,
+			timestamp: new Date().toISOString()
+		});
+
+	} catch (error) {
+		console.error('Wallet Summary Endpoint Error:', error);
+		return res.status(500).json({
+			error: 'Failed to generate wallet transaction summary',
 			details: error instanceof Error ? error.message : 'Unknown error'
 		});
 	}

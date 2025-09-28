@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { PeraWalletConnect } from '@perawallet/connect';
 import './ConnectScreen.css';
+import SplashCursor from './SplashCursor';
 
 interface ConnectScreenProps {
 	onConnect: () => void;
@@ -68,6 +69,7 @@ const ConnectScreen = ({ onConnect }: ConnectScreenProps) => {
 
 	return (
 		<div className="connect-screen">
+			<SplashCursor />
 			<div className="gradient-blob blob-1"></div>
 			<div className="gradient-blob blob-2"></div>
 			<div className="gradient-blob blob-3"></div>

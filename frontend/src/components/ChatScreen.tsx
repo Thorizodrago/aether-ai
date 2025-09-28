@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './ChatScreen.css';
 import { askAI } from '../services/aiService';
+import SplashCursor from './SplashCursor';
+import WalletTransactionService from '../services/walletTransactionService';
 
 interface Message {
 	id: string;
@@ -52,6 +54,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 	const agentCommands = [
 		{ command: '/send', label: 'Send to Wallet:', description: 'Send ALGO or ASAs to a wallet address', color: '#FFB6C1', placeholder: 'Enter recipient wallet address...' },
 		{ command: '/getBalance', label: 'Get Balance:', description: 'Check wallet balance', color: '#DDA0DD', placeholder: 'Press Enter to check balance' },
+		{ command: '/transactions', label: 'Last Transactions:', description: 'View recent wallet transactions', color: '#B0E0E6', placeholder: 'Press Enter to view transactions' },
 		{ command: '/sellAlgo', label: 'Sell ALGO:', description: 'Sell ALGO tokens', color: '#87CEEB', placeholder: 'Enter amount to sell...' },
 		{ command: '/buyAlgo', label: 'Buy ALGO:', description: 'Buy ALGO tokens', color: '#F0E68C', placeholder: 'Enter amount to buy...' },
 		{ command: '/swapAlgo', label: 'Swap ALGO:', description: 'Swap tokens', color: '#FFA07A', placeholder: 'Enter swap details...' },
@@ -280,6 +283,64 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 
 		if (lowerInput.startsWith('get balance:')) {
 			return `**💰 Wallet Balance**\n\n**MainNet Balance:**\n• **ALGO:** 1,234.56 ALGO\n• **USDC:** 500.00 USDC\n• **USDT:** 250.75 USDT\n\n**Total USD Value:** ~$2,847.32\n\n*Balance updated in real-time*`;
+		}
+
+		if (lowerInput.startsWith('last transactions:')) {
+			try {
+				const connectedWallet = walletAddress;
+				if (!connectedWallet) {
+					return "❌ **No Wallet Connected**\n\nPlease connect your Pera Wallet to view transaction history.";
+				}
+
+				// Show loading state
+				setTimeout(async () => {
+					try {
+						const summary = await WalletTransactionService.getWalletTransactionSummary(connectedWallet, 5);
+
+						if (summary.success) {
+							// Update the last message with the real transaction data
+							setMessages(prev => {
+								const updated = [...prev];
+								if (updated.length > 0) {
+									const lastMsg = updated[updated.length - 1];
+									if (!lastMsg.isUser) {
+										lastMsg.text = `**📋 Recent Transactions**\n\n${summary.summary}\n\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n**Count:** ${summary.transactionCount} transactions\n\n*Data fetched from Algorand Indexer*`;
+									}
+								}
+								return updated;
+							});
+						} else {
+							// Update with error message
+							setMessages(prev => {
+								const updated = [...prev];
+								if (updated.length > 0) {
+									const lastMsg = updated[updated.length - 1];
+									if (!lastMsg.isUser) {
+										lastMsg.text = `**❌ Transaction Fetch Failed**\n\n${summary.summary}\n\n*Please try again later or check your connection.*`;
+									}
+								}
+								return updated;
+							});
+						}
+					} catch (error) {
+						console.error('Transaction fetch error:', error);
+						setMessages(prev => {
+							const updated = [...prev];
+							if (updated.length > 0) {
+								const lastMsg = updated[updated.length - 1];
+								if (!lastMsg.isUser) {
+									lastMsg.text = `**❌ Error Loading Transactions**\n\nUnable to fetch transaction history. Please try again later.`;
+								}
+							}
+							return updated;
+						});
+					}
+				}, 100);
+
+				return `**🔍 Fetching Transactions...**\n\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n\n*Loading recent transaction history from Algorand blockchain...*`;
+			} catch (error) {
+				return "❌ **Error**: Unable to fetch transaction history. Please try again.";
+			}
 		}
 
 		if (lowerInput.startsWith('sell algo:') || lowerInput.startsWith('buy algo:') || lowerInput.startsWith('swap algo:')) {
@@ -539,6 +600,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 
 	return (
 		<div className="chat-screen">
+			<SplashCursor />
 			<div className="gradient-blob blob-1"></div>
 			<div className="gradient-blob blob-2"></div>
 			<div className="gradient-blob blob-3"></div>

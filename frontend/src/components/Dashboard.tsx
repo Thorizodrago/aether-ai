@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import SplashCursor from './SplashCursor';
 
 interface DashboardProps {
 	walletAddress: string;
@@ -17,6 +18,7 @@ const Dashboard = ({ walletAddress, onDisconnect }: DashboardProps) => {
 
 	return (
 		<div className="dashboard">
+			<SplashCursor />
 			<header className="dashboard-header">
 				<h1>Aether AI Dashboard</h1>
 				<div className="wallet-info">
