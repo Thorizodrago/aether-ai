@@ -639,3 +639,5 @@ DEPLOYER_MNEMONIC="YOUR 25 WORD MNEMONIC FOR DEPLOY (DEV ONLY)"
 
 ---
 **Made by Efe Yılmaz with ❤️, ☕, and 🤖 for the Algorand Ecosystem.**
+
+**This project won 2nd place in the Algorand Hackathon.🥳**
