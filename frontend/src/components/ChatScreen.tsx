@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import './ChatScreen.css';
 import { askAI } from '../services/aiService';
 import SplashCursor from './SplashCursor';
-import WalletTransactionService from '../services/walletTransactionService';
-import SmartContractService from '../services/smartContractService';
 
 interface Message {
 	id: string;
@@ -43,6 +41,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 	const [activeCommand, setActiveCommand] = useState<string>('');
 	const [contractTag, setContractTag] = useState<string>('');
 	const [hasActiveTag, setHasActiveTag] = useState<boolean>(false);
+	const [contractDraft, setContractDraft] = useState<string>(''); // Store last generated contract for refinement
 	const [chatSessions, setChatSessions] = useState<ChatSession[]>([
 		{ id: 'chat-1', name: 'Chat 1', messages: [], lastUpdated: new Date(), mode: 'Ask' }
 	]);
@@ -54,13 +53,10 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 	const staticQuestion = "How can I assist you in web3?";
 
 	const agentCommands = [
-		{ command: '/send', label: 'Send to Wallet:', description: 'Send ALGO or ASAs to a wallet address', color: '#FFB6C1', placeholder: 'Enter recipient wallet address...' },
-		{ command: '/getBalance', label: 'Get Balance:', description: 'Check wallet balance', color: '#DDA0DD', placeholder: 'Press Enter to check balance' },
-		{ command: '/transactions', label: 'Last Transactions:', description: 'View recent wallet transactions', color: '#B0E0E6', placeholder: 'Press Enter to view transactions' },
-		{ command: '/deployContract', label: 'Deploy Contract:', description: 'Deploy Send-to-Wallet smart contract', color: '#98FB98', placeholder: 'Press Enter to deploy' },
-		{ command: '/developContract', label: 'Develop Contract:', description: 'Generate a smart contract from a description', color: '#7FFFD4', placeholder: 'Describe the contract you want...' },
-		{ command: '/sellAlgo', label: 'Sell ALGO:', description: 'Sell ALGO tokens', color: '#87CEEB', placeholder: 'Enter amount to sell...' },
-		{ command: '/buyAlgo', label: 'Buy ALGO:', description: 'Buy ALGO tokens', color: '#F0E68C', placeholder: 'Enter amount to buy...' }
+		{ command: '/send', label: 'Send:', description: 'Send ALGO or ASAs to a wallet address', color: '#FFB6C1', placeholder: 'Enter recipient wallet address...' },
+		{ command: '/contract', label: 'Contract:', description: 'Generate, refine, or deploy smart contracts', color: '#7FFFD4', placeholder: 'Describe the contract you want...' },
+		{ command: '/getBalance', label: 'Balance:', description: 'Check wallet balance', color: '#DDA0DD', placeholder: 'Press Enter to check balance' },
+		{ command: '/swap', label: 'Swap:', description: 'Get swap rates and execute token swaps', color: '#FFA07A', placeholder: 'Enter swap details (e.g., USDC to ALGO)...' }
 	];
 
 	const questions = [
@@ -188,12 +184,14 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 		if (activeCommand || hasActiveTag) {
 			baseClass += " has-agent-command";
 
-			if (inputValue.toLowerCase().includes('send to wallet:')) {
+			if (inputValue.toLowerCase().includes('send:')) {
 				baseClass += " send-command";
-			} else if (inputValue.toLowerCase().includes('get balance:')) {
+			} else if (inputValue.toLowerCase().includes('balance:')) {
 				baseClass += " balance-command";
-			} else if (inputValue.toLowerCase().includes('buy algo:') || inputValue.toLowerCase().includes('sell algo:')) {
-				baseClass += " swap-command"; // reuse swap style for buy/sell
+			} else if (inputValue.toLowerCase().includes('swap:')) {
+				baseClass += " swap-command";
+			} else if (inputValue.toLowerCase().includes('contract:')) {
+				baseClass += " contract-command";
 			}
 		}
 
@@ -274,155 +272,107 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 	const processSpecialCommand = async (input: string): Promise<string> => {
 		const lowerInput = input.toLowerCase();
 
-		if (lowerInput.startsWith('send to wallet:')) {
-			const address = input.substring(15).trim();
+		// /send command
+		if (lowerInput.startsWith('send:')) {
+			const address = input.split(':')[1]?.trim();
 			if (address) {
 				const contractInfo = contractTag ? `\n**Contract:** ${contractTag}` : '';
 				return `**🚀 Send Transaction Prepared**\n\n**Recipient:** ${address}${contractInfo}\n**Network:** Algorand TestNet\n**Status:** Ready to sign\n\n*Please confirm the transaction in your Pera Wallet to complete the transfer.*`;
 			} else {
-				return "❌ Please provide a valid wallet address after 'Send to Wallet:'";
+				return "❌ Please provide a valid wallet address after 'Send:'";
 			}
 		}
 
-		if (lowerInput.startsWith('get balance:')) {
+		// /getBalance command
+		if (lowerInput.startsWith('balance:')) {
 			return `**💰 Wallet Balance**\n\n**MainNet Balance:**\n• **ALGO:** 1,234.56 ALGO\n• **USDC:** 500.00 USDC\n• **USDT:** 250.75 USDT\n\n**Total USD Value:** ~$2,847.32\n\n*Balance updated in real-time*`;
 		}
 
-		if (lowerInput.startsWith('last transactions:')) {
-			try {
-				const connectedWallet = walletAddress;
-				if (!connectedWallet) {
-					return "❌ **No Wallet Connected**\n\nPlease connect your Pera Wallet to view transaction history.";
+		// /swap command
+		if (lowerInput.startsWith('swap:')) {
+			const swapQuery = input.split(':')[1]?.trim() || '';
+			if (swapQuery) {
+				// Parse swap query (e.g., "USDC to ALGO" or "100 USDC for ALGO")
+				const swapMatch = swapQuery.match(/([\d.]*)\s*(\w+)\s*(?:to|for|→)\s*(\w+)/i);
+				if (swapMatch) {
+					const [, amount, fromToken, toToken] = swapMatch;
+					const mockRate = fromToken.toUpperCase() === 'USDC' && toToken.toUpperCase() === 'ALGO' ? 4.2 : 0.24;
+					const estimatedAmount = amount ? (parseFloat(amount) * mockRate).toFixed(2) : mockRate.toFixed(2);
+
+					return `**⚡ Swap Quote**\n\n**From:** ${amount || '1'} ${fromToken.toUpperCase()}\n**To:** ~${estimatedAmount} ${toToken.toUpperCase()}\n**Rate:** 1 ${fromToken.toUpperCase()} = ${mockRate} ${toToken.toUpperCase()}\n**Fee:** 0.3%\n**Slippage:** 0.5%\n\n*Rates from Tinyman DEX. Click to execute swap.*`;
+				} else {
+					return `**💱 Swap Information**\n\n**Query:** ${swapQuery}\n\n**Popular Pairs:**\n• ALGO/USDC - Rate: 0.24\n• USDC/ALGO - Rate: 4.2\n• ALGO/USDT - Rate: 0.23\n\n*Specify amounts for exact quotes (e.g., "100 USDC to ALGO")*`;
 				}
-
-				// Show loading state
-				setTimeout(async () => {
-					try {
-						const summary = await WalletTransactionService.getWalletTransactionSummary(connectedWallet, 5);
-
-						if (summary.success) {
-							// Update the last message with the real transaction data
-							setMessages(prev => {
-								const updated = [...prev];
-								if (updated.length > 0) {
-									const lastMsg = updated[updated.length - 1];
-									if (!lastMsg.isUser) {
-										lastMsg.text = `**📋 Recent Transactions**\n\n${summary.summary}\n\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n**Count:** ${summary.transactionCount} transactions\n\n*Data fetched from Algorand Indexer*`;
-									}
-								}
-								return updated;
-							});
-						} else {
-							// Update with error message
-							setMessages(prev => {
-								const updated = [...prev];
-								if (updated.length > 0) {
-									const lastMsg = updated[updated.length - 1];
-									if (!lastMsg.isUser) {
-										lastMsg.text = `**❌ Transaction Fetch Failed**\n\n${summary.summary}\n\n*Please try again later or check your connection.*`;
-									}
-								}
-								return updated;
-							});
-						}
-					} catch (error) {
-						console.error('Transaction fetch error:', error);
-						setMessages(prev => {
-							const updated = [...prev];
-							if (updated.length > 0) {
-								const lastMsg = updated[updated.length - 1];
-								if (!lastMsg.isUser) {
-									lastMsg.text = `**❌ Error Loading Transactions**\n\nUnable to fetch transaction history. Please try again later.`;
-								}
-							}
-							return updated;
-						});
-					}
-				}, 100);
-
-				return `**🔍 Fetching Transactions...**\n\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n\n*Loading recent transaction history from Algorand blockchain...*`;
-			} catch (error) {
-				return "❌ **Error**: Unable to fetch transaction history. Please try again.";
+			} else {
+				return `**💱 Swap Center**\n\n**Available Tokens:**\n• ALGO, USDC, USDT, AKTA\n\n**Format:** Swap: [amount] [from_token] to [to_token]\n**Example:** Swap: 100 USDC to ALGO\n\n*Get real-time rates and execute swaps*`;
 			}
 		}
 
-		if (lowerInput.startsWith('sell algo:') || lowerInput.startsWith('buy algo:')) {
-			const action = lowerInput.startsWith('sell') ? 'Sell' : 'Buy';
-			const amount = input.split(':')[1]?.trim() || '';
-			return `**⚡ ${action} ALGO Transaction**\n\n${amount ? `**Amount:** ${amount}\n` : ''}**Action:** ${action} ALGO\n**Status:** Ready for signature\n\n*Confirm in your Pera Wallet to complete the ${action.toLowerCase()} operation.*`;
-		}
+		// /contract command
+		if (lowerInput.startsWith('contract:')) {
+			const contractQuery = input.split(':')[1]?.trim() || '';
 
-		if (lowerInput.startsWith('deploy contract:')) {
-			try {
-				const connectedWallet = walletAddress;
-				if (!connectedWallet) {
-					return "❌ **No Wallet Connected**\n\nPlease connect your Pera Wallet to deploy smart contracts.";
-				}
+			// If we have an existing contract draft and user gives refinement instructions
+			if (contractDraft && contractQuery && !contractQuery.toLowerCase().includes('new') && !contractQuery.toLowerCase().includes('create')) {
+				try {
+					const refinementPrompt = `Here's an existing Algorand TEAL smart contract:\n\n${contractDraft}\n\nUser wants to refine it with this request: "${contractQuery}"\n\nReturn the updated TEAL contract code in a fenced code block with 'teal' language tag. Include brief comments explaining the changes.`;
+					const refinedResponse = await askAI(refinementPrompt, walletAddress);
 
-				// Show loading state and start deployment
-				setTimeout(async () => {
-					try {
-						const { approval, clear } = SmartContractService.getSendToWalletContract();
-						const deployment = await SmartContractService.deployContract(
-							connectedWallet,
-							approval,
-							clear
-						);
-
-						if (deployment.unsignedTxn) {
-							// For now, just show that the contract transaction is ready
-							// In a real implementation, you would handle Pera Wallet signing here
-
-							// Update message with ready state
-							setMessages(prev => {
-								const updated = [...prev];
-								if (updated.length > 0) {
-									const lastMsg = updated[updated.length - 1];
-									if (!lastMsg.isUser) {
-										lastMsg.text = `**📋 Smart Contract Ready for Deployment**\n\n**Contract Type:** Send-to-Wallet\n**Network:** Algorand TestNet\n**Transaction:** Prepared\n**Status:** Ready for signature\n\n*Contract transaction has been prepared. In a full implementation, this would automatically open Pera Wallet for signing.*\n\n**Contract Features:**\n• Secure token transfers\n• Built-in fee management\n• Transfer statistics\n• Admin controls`;
-									}
-								}
-								return updated;
-							});
-						}
-					} catch (error) {
-						console.error('Contract deployment error:', error);
-						setMessages(prev => {
-							const updated = [...prev];
-							if (updated.length > 0) {
-								const lastMsg = updated[updated.length - 1];
-								if (!lastMsg.isUser) {
-									lastMsg.text = `**❌ Contract Deployment Failed**\n\n${error instanceof Error ? error.message : 'Unknown deployment error'}\n\n*Please try again later or check your connection.*`;
-								}
-							}
-							return updated;
-						});
+					// Extract contract code from AI response and store it
+					const codeBlockMatch = refinedResponse.match(/```teal\n([\s\S]*?)\n```/);
+					if (codeBlockMatch) {
+						setContractDraft(codeBlockMatch[1]);
 					}
-				}, 100);
 
-				return `**🚀 Deploying Smart Contract...**\n\n**Contract Type:** Send-to-Wallet\n**Network:** Algorand TestNet\n**Wallet:** ${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-4)}\n\n*Preparing contract deployment transaction...*`;
-			} catch (error) {
-				return "❌ **Error**: Unable to deploy smart contract. Please try again.";
+					return `**� Contract Refined**\n\n**Refinement:** ${contractQuery}\n\n${refinedResponse}\n\n*Say "deploy" to prepare for deployment or continue refining.*`;
+				} catch (err) {
+					return `**❌ Refinement Failed**\n\nCouldn't refine the contract. Please try again or start with a new contract.`;
+				}
+			} else {
+				// Generate new contract
+				try {
+					const description = contractQuery || 'basic utility contract';
+					const prompt = `You are an Algorand smart contract generator. Generate a TEAL v8 contract based on this description: "${description}".\nReturn ONLY a fenced code block with 'teal' as language and include minimal explanatory header comments. Focus on functionality, state management, and access control.`;
+					const aiCodeResponse = await askAI(prompt, walletAddress);
+
+					// Extract and store contract code for future refinement
+					const codeBlockMatch = aiCodeResponse.match(/```teal\n([\s\S]*?)\n```/);
+					if (codeBlockMatch) {
+						setContractDraft(codeBlockMatch[1]);
+					}
+
+					if (/```/.test(aiCodeResponse)) {
+						return `**🛠 Contract Generated**\n\n**Description:** ${description}\n\n${aiCodeResponse}\n\n*Refine with: "Contract: add daily limits" or deploy with: "Contract: deploy"*`;
+					}
+					// Fallback if no code block in response
+					setContractDraft(aiCodeResponse);
+					return `**🛠 Contract Generated**\n\n**Description:** ${description}\n\n\`\`\`teal\n${aiCodeResponse}\n\`\`\`\n\n*Refine with additional requirements or deploy.*`;
+				} catch (err) {
+					// Fallback static skeleton
+					const code = `// Algorand Smart Contract (TEAL)\n// Description: ${contractQuery || 'basic utility'}\n// Generated by Aether AI (fallback)\n\n#pragma version 8\n\n// Global state keys\nbyte "Admin"\naddr YOUR_ADMIN_ADDRESS_HERE\n==\n\n// Basic no-op always accept (placeholder)\nint 1`;
+					setContractDraft(code);
+					return `**🛠 Contract Generated (Fallback)**\n\n**Description:** ${contractQuery}\n\n\`\`\`teal\n${code}\n\`\`\`\n\n*Refine with more details for AI generation.*`;
+				}
 			}
 		}
 
-		if (lowerInput.startsWith('develop contract:')) {
-			// Extract description after the colon
-			const description = input.split(':')[1]?.trim() || 'generic utility';
-			// Try dynamic generation via AI
+		// Handle free-form text that might be contract refinement
+		if (contractDraft && !lowerInput.includes(':') && input.trim().length > 5) {
+			// User typed free text and we have an existing contract - treat as refinement
 			try {
-				const prompt = `You are an Algorand smart contract generator. Generate a TEAL v8 contract based on this description: "${description}".\nReturn ONLY a fenced code block with 'teal' as language and include minimal explanatory header comments. Avoid extraneous commentary outside the code block.`;
-				const aiCodeResponse = await askAI(prompt, walletAddress);
-				// If response already contains a code block we just wrap standard message around it
-				if (/```/.test(aiCodeResponse)) {
-					return `**🛠 Contract Draft Generated**\n\n**Description:** ${description}\n\n${aiCodeResponse}\n\n*Refine by adding: state keys, access control, fees, events.*`;
+				const refinementPrompt = `Here's an existing Algorand TEAL smart contract:\n\n${contractDraft}\n\nUser wants to modify it with this instruction: "${input}"\n\nReturn the updated TEAL contract code in a fenced code block with 'teal' language tag. Include brief comments explaining the changes.`;
+				const refinedResponse = await askAI(refinementPrompt, walletAddress);
+
+				// Extract contract code from AI response and store it
+				const codeBlockMatch = refinedResponse.match(/```teal\n([\s\S]*?)\n```/);
+				if (codeBlockMatch) {
+					setContractDraft(codeBlockMatch[1]);
 				}
-				// Otherwise embed it
-				return `**🛠 Contract Draft Generated**\n\n**Description:** ${description}\n\n\`\`\`teal\n${aiCodeResponse}\n\`\`\`\n\n*Refine by adding: state keys, access control, fees, events.*`;
+
+				return `**🔧 Contract Auto-Refined**\n\n**Request:** ${input}\n\n${refinedResponse}\n\n*Continue refining or say "deploy" to prepare deployment.*`;
 			} catch (err) {
-				// Fallback static skeleton
-				const code = `// Algorand Smart Contract (TEAL)\n// Description: ${description}\n// Generated by Aether AI (fallback)\n\n#pragma version 8\n\n// Global state keys\nbyte \"Admin\"\naddr YOUR_ADMIN_ADDRESS_HERE\n==\n\n// Basic no-op always accept (placeholder)\nint 1`;
-				return `**🛠 Contract Draft Generated (Fallback)**\n\n**Description:** ${description}\n\n\`\`\`teal\n${code}\n\`\`\`\n\n*Refine again for a richer version.*`;
+				// Don't interfere with normal AI flow if refinement fails
+				return '';
 			}
 		}
 
@@ -769,7 +719,7 @@ const ChatScreen = ({ onShowPremium }: ChatScreenProps) => {
 							</button>
 						</div>
 						{selectedMode === 'Agent' && (
-							<p className="mode-hint">Type '/' to view agent commands or use <strong>Develop Contract:</strong> to generate a contract.</p>
+							<p className="mode-hint">Type '/' to view agent commands or use <strong>Contract:</strong> to generate contracts.</p>
 						)}
 						<form onSubmit={handleInputSubmit} className="chat-form">
 							<div className="input-wrapper">

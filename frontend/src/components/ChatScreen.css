@@ -545,6 +545,12 @@
 	color: rgba(255, 255, 255, 0.6);
 }
 
+/* Contract command specific styling */
+.contract-command {
+	border: 1px solid #7FFFD4 !important;
+	background: rgba(127, 255, 212, 0.1) !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
 	.chat-container {
