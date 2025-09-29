@@ -1,5 +1,7 @@
 # 🌟 Aether AI - Advanced Web3 & DeFi AI Assistant
-
+---
+**This project won 2nd place in the Algorand Hackathon Istanbul Edition.🥳**
+---
 **Aether AI** is an intelligent Web3 assistant built for the Algorand blockchain ecosystem. It combines cutting-edge AI technology with comprehensive DeFi functionality, offering users both conversational AI guidance and direct blockchain interactions through intuitive agent commands.
 
 ## 🎯 Goal
@@ -19,6 +21,8 @@ The main goals of Aether AI are:
   - `/send` - Send ALGO or ASAs to any wallet address
   - `/getBalance` - Check wallet balance with portfolio analytics  
   - `/conract` - AI write and deploy conracts
+  - `/swap` - Checks best swapping options.
+  - `/pool` - Checks optimum pools for each user.
 - 💸 **Real Blockchain Operations** - Actual on-chain transactions, not simulations
 - 🎨 **Dynamic UI** - Color-coded agent commands with visual feedback
 - 🔍 **Smart Contract Library** - Production-ready PyTeal contracts for each command
@@ -268,34 +272,7 @@ export const config = {
 ### 3. Agent Command Mode
 - Select "Agent" mode to access blockchain commands
 - Type `/` to see available agent commands with color-coded suggestions
-
-#### Agent Commands:
-
-**🌸 Send to Wallet (`/send`)**
-```
-/send GBZXCF7KLBGAUR7DKFSJ34J... 5.5
-```
-- Send ALGO or ASAs to any wallet address
-- Supports batch transfers and fee calculation
-- Real-time transaction confirmation
-
-**💜 Get Balance (`/getBalance`)**  
-```
-/getBalance
-```
-- Check your complete wallet balance
-- Portfolio analytics with yield calculations
-- Historical balance tracking
-
-
-
-**🍃 Develop Contracy (`/contract`)**
-```
-/contract
-```
-- Develop a contract using Aether
-- Deploy your contract easily
-- Track and test with algokit support
+- AI will ask you what you want to do after you select the command
 
 ## 🧪 Testing
 
@@ -322,38 +299,6 @@ cd contracts/examples
 python3 -m pytest test_contracts.py -v
 ```
 
-## 🚀 Deployment
-
-### Production Build
-
-1. **Build frontend**
-```bash
-cd frontend
-npm run build
-```
-
-2. **Build backend**
-```bash
-cd backend  
-npm run build
-```
-
-3. **Start production server**
-```bash
-cd backend
-npm start
-```
-
-### Docker Production
-
-```bash
-# Build production images
-docker-compose -f docker-compose.prod.yml build
-
-# Start production services
-docker-compose -f docker-compose.prod.yml up -d
-```
-
 ### Environment Variables (Production)
 
 ```bash
@@ -364,14 +309,6 @@ ALGORAND_SERVER=https://mainnet-api.algonode.cloud
 ALGORAND_INDEXER=https://mainnet-idx.algonode.cloud
 FRONTEND_URL=https://your-domain.com
 ```
-
-### Development Guidelines
-
-- Follow TypeScript strict mode requirements
-- Write comprehensive tests for new features  
-- Update documentation for API changes
-- Ensure smart contracts have proper test coverage
-- Follow the existing code style and conventions
 
 ## 🔍 API Documentation
 
@@ -397,23 +334,22 @@ FRONTEND_URL=https://your-domain.com
 ## 📋 Todo & Roadmap
 
 ### Immediate (v1.1)
-- [ ] MainNet support for production trading
-- [ ] Advanced portfolio analytics dashboard
-- [x] Transaction history and export features
-- [x] Mobile app development (React Native)
-
-### Short Term (v1.2-1.3)
+- [ ] Mobile app development (React Native)
 - [ ] Multi-language support (Turkish, Spanish, French)
+  
+### Short Term (v1.2-1.3)
 - [ ] NFT integration and marketplace features
 - [ ] Advanced yield farming strategies
 - [ ] Cross-chain bridge integrations (Ethereum, Binance)
+- [ ] Institutional trading features
 
 ### Long Term (v2.0+)
 - [ ] AI-driven portfolio optimization
 - [ ] Social trading features
 - [ ] DAO governance integration
 - [ ] Advanced analytics and market insights
-- [ ] Institutional trading features
+- [ ] Advanced portfolio analytics dashboard
+- [ ] Transaction history and export features
 
 ## 🛡️ Security
 
@@ -455,7 +391,7 @@ FRONTEND_URL=https://your-domain.com
 - TestNet account with some ALGOs for deployment fees
 - Environment variables configured
 
-### Deployment Steps
+## 🧪 Deployment Steps
 
 ⚠️ **SECURITY WARNING**: Never commit real mnemonics to version control!
 
@@ -478,166 +414,7 @@ FRONTEND_URL=https://your-domain.com
 
 **Note**: AlgoKit deployment is optional for now and primarily used for smart contract deployment when needed.
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18+)
-- Docker & Docker Compose
-- Git
-
-### Quick Start with Docker
-
-1. **Clone and navigate to project:**
-   ```bash
-   git clone <repository-url>
-   cd aether-ai
-   ```
-
-2. **Start all services:**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Access the applications:**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001
-   - LocalAI Service: http://localhost:8080
-   - Context7 Service: http://localhost:8081
-   - PostgreSQL: localhost:5432
-
-### Development Setup (Local)
-
-#### Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-#### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## 🛠️ Available Scripts
-
-### Backend
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm start` - Start production server
-
-### Frontend
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-## 🐳 Docker Commands
-
-- `docker-compose up` - Start all services
-- `docker-compose up -d` - Start in detached mode
-- `docker-compose down` - Stop all services
-- `docker-compose logs [service]` - View logs
-- `docker-compose exec [service] bash` - Access service shell
-
-## 🔧 Environment Variables
-
-### Frontend (.env)
-```
-# WARNING: Never commit real mnemonics or private keys to version control
-# Use test mnemonics only for local development if absolutely needed
-
-# API Configuration
-VITE_API_URL=http://localhost:4000
-VITE_ALGORAND_NETWORK=TESTNET
-
-# Algorand TestNet Endpoints
-VITE_ALGOD_API=https://testnet-api.algonode.cloud
-VITE_INDEXER_API=https://testnet-idx.algonode.cloud
-
-# Pera Wallet TestNet Configuration
-VITE_PERA_CHAIN_ID=416002
-```
-
-### Backend (.env)
-```
-# WARNING: Never commit real mnemonics or private keys to version control
-# Use test mnemonics only for local development if absolutely needed
-
-NETWORK=testnet
-PORT=4000
-ALGOD_API=https://testnet-api.algonode.cloud
-INDEXER_API=https://testnet-idx.algonode.cloud
-JWT_SECRET=a_change_me_value
-
-# Optional for AlgoKit deploy (local dev only)
-DEPLOYER_MNEMONIC="YOUR 25 WORD MNEMONIC FOR DEPLOY (DEV ONLY)"
-```
-
-## 📱 Pera Wallet Setup
-
-### Developer Instructions:
-1. **Switch Pera Wallet to TestNet:**
-   - Open Pera Wallet mobile app
-   - Go to Settings → Developer Settings
-   - Change Network to TestNet
-   
-2. **Environment Configuration:**
-   - Copy `.env.example` to `.env` in both frontend/ and backend/
-   - Update VITE_API_URL if backend runs on different port
-   
-3. **Testing Backend Connection:**
-   - Start backend: `npm run dev` in backend/
-   - Visit http://localhost:4000/auth/request-challenge in browser
-   - Should return JSON response (not error)
-   
-4. **Troubleshooting:**
-   - Confirm Pera Wallet is in TestNet mode
-   - Verify VITE_API_URL points to running backend
-   - Check browser console for connection errors
-
-## 🏛️ Architecture
-
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Express.js + TypeScript
-- **Database**: PostgreSQL 15
-- **Infrastructure**: Docker + Docker Compose
-- **AI Services**: LocalAI (Python/Flask) + Context7 (Node.js)
-
-## 📝 API Endpoints
-
-### Backend API (Port 3001)
-- `GET /` - API information
-- `GET /health` - Health check
-
-### LocalAI Service (Port 8080)
-- `GET /` - Service information  
-- `GET /health` - Health check
-- `GET /api/models` - Available AI models
-
-### Context7 Service (Port 8081)
-- `GET /` - Service information
-- `GET /health` - Health check
-- `GET /api/context` - Context management
-
-## 🔄 Development Workflow
-
-1. Make changes to your code
-2. Services will auto-reload in development mode
-3. Test your changes
-4. Commit and push to repository
-
-## 📋 Todo
-
-- [ ] Add authentication system
-- [ ] Implement AI model integration
-- [ ] Add context management features
-- [ ] Set up monitoring and logging
-- [ ] Add comprehensive testing
-- [ ] Implement CI/CD pipeline
 
 ---
-**Made by Efe Yılmaz with ❤️, ☕, and 🤖 for the Algorand Ecosystem.**
 
-**This project won 2nd place in the Algorand Hackathon.🥳**
+**Made by Efe Yılmaz with ❤️, ☕, and 🤖 for the Algorand Ecosystem.**
