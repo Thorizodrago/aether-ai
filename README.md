@@ -1,7 +1,9 @@
 # 🌟 Aether AI - Advanced Web3 & DeFi AI Assistant
+
 ---
-**This project won 2nd place in the Algorand Hackathon Istanbul Edition.🥳**
+##### This project won 2nd place in the Algorand Hackathon Istanbul Edition.🥳
 ---
+
 **Aether AI** is an intelligent Web3 assistant built for the Algorand blockchain ecosystem. It combines cutting-edge AI technology with comprehensive DeFi functionality, offering users both conversational AI guidance and direct blockchain interactions through intuitive agent commands.
 
 ## 🎯 Goal
